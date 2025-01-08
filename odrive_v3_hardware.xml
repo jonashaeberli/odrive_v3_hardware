@@ -1,0 +1,9 @@
+<library path="odrive_v3_hardware">
+  <class name="odrive_v3_hardware/OdriveV3Hardware"
+         type="odrive_v3_hardware::OdriveV3Hardware"
+         base_class_type="hardware_interface::ActuatorInterface">
+    <description>
+      ros2_control hardware interface.
+    </description>
+  </class>
+</library>
