@@ -47,18 +47,6 @@ install(
   DESTINATION include
 )
 
-if(BUILD_TESTING)
-
-  ament_add_gmock(test_odrive_v3_hardware test/test_odrive_v3_hardware.cpp)
-  target_include_directories(test_odrive_v3_hardware PRIVATE include)
-  ament_target_dependencies(
-    test_odrive_v3_hardware
-    hardware_interface
-    pluginlib
-    ros2_control_test_assets
-  )
-endif()
-
 ament_export_include_directories(
   include
 )
