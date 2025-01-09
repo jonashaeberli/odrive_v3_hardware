@@ -11,6 +11,7 @@ find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(odrive_communication REQUIRED)
 
 add_library(
   odrive_v3_hardware
@@ -27,6 +28,7 @@ ament_target_dependencies(
   hardware_interface
   rclcpp
   rclcpp_lifecycle
+  odrive_communication
 )
 # prevent pluginlib from using boost
 target_compile_definitions(odrive_v3_hardware PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")

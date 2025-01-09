@@ -62,8 +62,12 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
 private:
-  std::vector<double> hw_commands_;
-  std::vector<double> hw_states_;
+  std::vector<double> hw_commands_position_;
+  std::vector<double> hw_commands_velocity_;
+  std::vector<double> hw_commands_acceleration_;
+  std::vector<double> hw_states_position_;
+  std::vector<double> hw_states_velocity_;
+  double transmission_;
 };
 
 }  // namespace odrive_v3_hardware

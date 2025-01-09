@@ -30,17 +30,39 @@ hardware_interface::CallbackReturn OdriveV3Hardware::on_init(
   }
 
   // TODO(anyone): read parameters and initialize the hardware
-  hw_states_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
-  hw_commands_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+  try
+    {
+      auto transmission_param = info.hardware_parameters.at("transmission");
+      transmission_ = std::stod(transmission_param);
+      RCLCPP_INFO(rclcpp::get_logger("OdriveV3Hardware"), "Transmission: %f", transmission_);
+    }
+    catch (const std::out_of_range &)
+    {
+      RCLCPP_ERROR(rclcpp::get_logger("OdriveV3Hardware"), "Transmission parameter not found.");
+      return CallbackReturn::ERROR;
+    }
+    catch (const std::invalid_argument &)
+    {
+      RCLCPP_ERROR(rclcpp::get_logger("OdriveV3Hardware"), "Invalid transmission parameter value.");
+      return CallbackReturn::ERROR;
+    }
+
+
+  hw_states_position_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+  hw_states_velocity_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+  hw_commands_position_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+  hw_commands_velocity_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
+  hw_commands_acceleration_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
 
   return CallbackReturn::SUCCESS;
 }
 
 hardware_interface::CallbackReturn OdriveV3Hardware::on_configure(
-  const rclcpp_lifecycle::State & /*previous_state*/)
+  const rclcpp_lifecycle::State & previous_state)
 {
-  // TODO(anyone): prepare the robot to be ready for read calls and write calls of some interfaces
-
+  RCLCPP_INFO(rclcpp::get_logger("OdriveV3Hardware"),
+  "Transitioning from state: %s", previous_state.label().c_str());
+  
   return CallbackReturn::SUCCESS;
 }
 
@@ -50,8 +72,10 @@ std::vector<hardware_interface::StateInterface> OdriveV3Hardware::export_state_i
   for (size_t i = 0; i < info_.joints.size(); ++i)
   {
     state_interfaces.emplace_back(hardware_interface::StateInterface(
-      // TODO(anyone): insert correct interfaces
-      info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_states_[i]));
+      info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_states_position_[i]));
+
+    state_interfaces.emplace_back(hardware_interface::StateInterface(
+      info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_states_velocity_[i]));
   }
 
   return state_interfaces;
@@ -62,13 +86,22 @@ std::vector<hardware_interface::CommandInterface> OdriveV3Hardware::export_comma
   std::vector<hardware_interface::CommandInterface> command_interfaces;
   for (size_t i = 0; i < info_.joints.size(); ++i)
   {
+    // Position interface
     command_interfaces.emplace_back(hardware_interface::CommandInterface(
-      // TODO(anyone): insert correct interfaces
-      info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_commands_[i]));
+      info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_commands_position_[i]));
+
+    // Velocity interface
+    command_interfaces.emplace_back(hardware_interface::CommandInterface(
+      info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_commands_velocity_[i]));
+
+    // Acceleration interface
+    command_interfaces.emplace_back(hardware_interface::CommandInterface(
+      info_.joints[i].name, hardware_interface::HW_IF_ACCELERATION, &hw_commands_acceleration_[i]));
   }
 
   return command_interfaces;
 }
+
 
 hardware_interface::CallbackReturn OdriveV3Hardware::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
