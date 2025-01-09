@@ -19,8 +19,6 @@
 #include "odrive_v3_hardware/odrive_v3_hardware.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-#include <odrive_communication/ODrive.h>
-
 namespace odrive_v3_hardware
 {
 hardware_interface::CallbackReturn OdriveV3Hardware::on_init(
@@ -68,7 +66,7 @@ hardware_interface::CallbackReturn OdriveV3Hardware::on_init(
   try
     {
       auto can_id_param = info.hardware_parameters.at("can_id");
-      can_id_ = std::stoi(can_id_param);
+      can_id_ = static_cast<uint16_t>(std::stoi(can_id_param));
       RCLCPP_INFO(rclcpp::get_logger("OdriveV3Hardware"), "can_id: %d", can_id_);
     }
     catch (const std::out_of_range &)
@@ -87,7 +85,6 @@ hardware_interface::CallbackReturn OdriveV3Hardware::on_init(
   hw_states_velocity_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
   hw_commands_position_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
   hw_commands_velocity_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
-  hw_commands_acceleration_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
 
   return CallbackReturn::SUCCESS;
 }
@@ -128,10 +125,6 @@ std::vector<hardware_interface::CommandInterface> OdriveV3Hardware::export_comma
     // Velocity interface
     command_interfaces.emplace_back(hardware_interface::CommandInterface(
       info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_commands_velocity_[i]));
-
-    // Acceleration interface
-    command_interfaces.emplace_back(hardware_interface::CommandInterface(
-      info_.joints[i].name, hardware_interface::HW_IF_ACCELERATION, &hw_commands_acceleration_[i]));
   }
 
   return command_interfaces;
@@ -165,7 +158,14 @@ hardware_interface::return_type OdriveV3Hardware::read(
 hardware_interface::return_type OdriveV3Hardware::write(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-  // TODO(anyone): write robot's commands'
+  
+  for (size_t i = 0; i < info_.joints.size(); i++)
+  {
+    punning_position.f = static_cast<float>(hw_commands_position_[i]);
+    velocity = static_cast<int16_t>(hw_commands_velocity_[i] * 1000);
+    
+    Hndl.SetInputPos(can_id_, punning_position.u, velocity, 0);
+  }
 
   return hardware_interface::return_type::OK;
 }

@@ -26,6 +26,8 @@
 #include "rclcpp/macros.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 
+#include "odrive_communication/ODrive.h"
+
 namespace odrive_v3_hardware
 {
 class OdriveV3Hardware : public hardware_interface::ActuatorInterface
@@ -64,12 +66,21 @@ public:
 private:
   std::vector<double> hw_commands_position_;
   std::vector<double> hw_commands_velocity_;
-  std::vector<double> hw_commands_acceleration_;
   std::vector<double> hw_states_position_;
   std::vector<double> hw_states_velocity_;
   double transmission_;
   double joint_zero_;
-  int32_t can_id_;
+  uint16_t can_id_;
+
+  ODrive::ODrive Hndl;
+  union
+  {
+    float f;
+    uint32_t u;
+  }punning_position;
+  
+  int16_t velocity;
+
 };
 
 }  // namespace odrive_v3_hardware
