@@ -19,6 +19,8 @@
 #include "odrive_v3_hardware/odrive_v3_hardware.hpp"
 #include "rclcpp/rclcpp.hpp"
 
+#include <odrive_communication/ODrive.h>
+
 namespace odrive_v3_hardware
 {
 hardware_interface::CallbackReturn OdriveV3Hardware::on_init(
@@ -29,7 +31,6 @@ hardware_interface::CallbackReturn OdriveV3Hardware::on_init(
     return CallbackReturn::ERROR;
   }
 
-  // TODO(anyone): read parameters and initialize the hardware
   try
     {
       auto transmission_param = info.hardware_parameters.at("transmission");
@@ -44,6 +45,40 @@ hardware_interface::CallbackReturn OdriveV3Hardware::on_init(
     catch (const std::invalid_argument &)
     {
       RCLCPP_ERROR(rclcpp::get_logger("OdriveV3Hardware"), "Invalid transmission parameter value.");
+      return CallbackReturn::ERROR;
+    }
+
+  try
+    {
+      auto joint_zero_param = info.hardware_parameters.at("joint_zero");
+      joint_zero_ = std::stod(joint_zero_param);
+      RCLCPP_INFO(rclcpp::get_logger("OdriveV3Hardware"), "Zero: %f", joint_zero_);
+    }
+    catch (const std::out_of_range &)
+    {
+      RCLCPP_ERROR(rclcpp::get_logger("OdriveV3Hardware"), "Zero position parameter not found.");
+      return CallbackReturn::ERROR;
+    }
+    catch (const std::invalid_argument &)
+    {
+      RCLCPP_ERROR(rclcpp::get_logger("OdriveV3Hardware"), "Invalid zero position parameter value.");
+      return CallbackReturn::ERROR;
+    }
+  
+  try
+    {
+      auto can_id_param = info.hardware_parameters.at("can_id");
+      can_id_ = std::stoi(can_id_param);
+      RCLCPP_INFO(rclcpp::get_logger("OdriveV3Hardware"), "can_id: %d", can_id_);
+    }
+    catch (const std::out_of_range &)
+    {
+      RCLCPP_ERROR(rclcpp::get_logger("OdriveV3Hardware"), "can_id parameter not found.");
+      return CallbackReturn::ERROR;
+    }
+    catch (const std::invalid_argument &)
+    {
+      RCLCPP_ERROR(rclcpp::get_logger("OdriveV3Hardware"), "Invalid can_id parameter value.");
       return CallbackReturn::ERROR;
     }
 

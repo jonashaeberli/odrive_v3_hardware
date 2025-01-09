@@ -68,6 +68,8 @@ private:
   std::vector<double> hw_states_position_;
   std::vector<double> hw_states_velocity_;
   double transmission_;
+  double joint_zero_;
+  int32_t can_id_;
 };
 
 }  // namespace odrive_v3_hardware
