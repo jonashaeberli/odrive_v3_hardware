@@ -68,9 +68,12 @@ private:
   std::vector<double> hw_commands_velocity_;
   std::vector<double> hw_states_position_;
   std::vector<double> hw_states_velocity_;
-  double transmission_;
-  double joint_zero_;
+  float transmission_;
+  float joint_zero_;
   uint16_t can_id_;
+
+  float position_multiplication_factor_;
+  float velocity_multiplication_factor_;
 
   ODrive::ODrive Hndl;
   union

@@ -32,7 +32,7 @@ hardware_interface::CallbackReturn OdriveV3Hardware::on_init(
   try
     {
       auto transmission_param = info.hardware_parameters.at("transmission");
-      transmission_ = std::stod(transmission_param);
+      transmission_ = static_cast<float>(std::stod(transmission_param));
       RCLCPP_INFO(rclcpp::get_logger("OdriveV3Hardware"), "Transmission: %f", transmission_);
     }
     catch (const std::out_of_range &)
@@ -49,7 +49,7 @@ hardware_interface::CallbackReturn OdriveV3Hardware::on_init(
   try
     {
       auto joint_zero_param = info.hardware_parameters.at("joint_zero");
-      joint_zero_ = std::stod(joint_zero_param);
+      joint_zero_ = static_cast<float>(std::stod(joint_zero_param));
       RCLCPP_INFO(rclcpp::get_logger("OdriveV3Hardware"), "Zero: %f", joint_zero_);
     }
     catch (const std::out_of_range &)
@@ -79,6 +79,9 @@ hardware_interface::CallbackReturn OdriveV3Hardware::on_init(
       RCLCPP_ERROR(rclcpp::get_logger("OdriveV3Hardware"), "Invalid can_id parameter value.");
       return CallbackReturn::ERROR;
     }
+
+  position_multiplication_factor_ = static_cast<float>(transmission_ / 6.283185307); // Rotations multiplied by this values results in the amount of rotations needed to get to a motor output angle specified in radians
+  velocity_multiplication_factor_ = static_cast<float>((1000.0 / 6.283185307) * transmission_);
 
 
   hw_states_position_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
@@ -161,8 +164,8 @@ hardware_interface::return_type OdriveV3Hardware::write(
   
   for (size_t i = 0; i < info_.joints.size(); i++)
   {
-    punning_position.f = static_cast<float>(hw_commands_position_[i]);
-    velocity = static_cast<int16_t>(hw_commands_velocity_[i] * 1000);
+    punning_position.f = static_cast<float>(hw_commands_position_[i]) * position_multiplication_factor_ - joint_zero_;
+    velocity = static_cast<int16_t>(hw_commands_velocity_[i] * velocity_multiplication_factor_);
     
     Hndl.SetInputPos(can_id_, punning_position.u, velocity, 0);
   }
