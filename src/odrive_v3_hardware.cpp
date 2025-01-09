@@ -82,6 +82,7 @@ hardware_interface::CallbackReturn OdriveV3Hardware::on_init(
 
   position_multiplication_factor_ = static_cast<float>(transmission_ / 6.283185307); // Rotations multiplied by this values results in the amount of rotations needed to get to a motor output angle specified in radians
   velocity_multiplication_factor_ = static_cast<float>((1000.0 / 6.283185307) * transmission_);
+  velocity_decode_factor = static_cast<float>(transmission_ / 6.283185307);
 
 
   hw_states_position_.resize(info_.joints.size(), std::numeric_limits<double>::quiet_NaN());
@@ -154,6 +155,15 @@ hardware_interface::return_type OdriveV3Hardware::read(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
   // TODO(anyone): read robot states
+  for (size_t i = 0; i < info_.joints.size(); i++)
+  {
+    estimates = Hndl.GetEncoderEstimate(can_id_);
+    punning_position.u = estimates.Position;
+    punning_velocity.u = estimates.Velocity;
+
+    hw_states_position_[i] = static_cast<double>(punning_position.f / position_multiplication_factor_ + joint_zero_);
+    hw_states_velocity_[i] = static_cast<double>(punning_velocity.f / velocity_decode_factor);
+  }
 
   return hardware_interface::return_type::OK;
 }
@@ -165,9 +175,9 @@ hardware_interface::return_type OdriveV3Hardware::write(
   for (size_t i = 0; i < info_.joints.size(); i++)
   {
     punning_position.f = static_cast<float>(hw_commands_position_[i]) * position_multiplication_factor_ - joint_zero_;
-    velocity = static_cast<int16_t>(hw_commands_velocity_[i] * velocity_multiplication_factor_);
+    punning_velocity_ff.i = static_cast<int16_t>(hw_commands_velocity_[i] * velocity_multiplication_factor_);
     
-    Hndl.SetInputPos(can_id_, punning_position.u, velocity, 0);
+    Hndl.SetInputPos(can_id_, punning_position.u, punning_velocity_ff.u, 0);
   }
 
   return hardware_interface::return_type::OK;

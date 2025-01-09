@@ -74,6 +74,7 @@ private:
 
   float position_multiplication_factor_;
   float velocity_multiplication_factor_;
+  float velocity_decode_factor;
 
   ODrive::ODrive Hndl;
   union
@@ -81,8 +82,21 @@ private:
     float f;
     uint32_t u;
   }punning_position;
-  
-  int16_t velocity;
+
+  union
+  {
+    int16_t i;
+    uint16_t u;
+  }punning_velocity_ff;
+
+  union
+  {
+    float f;
+    uint32_t u;
+  }punning_velocity;
+
+
+  EncoderEstimates estimates;
 
 };
 
